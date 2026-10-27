@@ -15,7 +15,9 @@ jobs:
       - name: Run Ghidra headless
         run: |
           BIN=$(cat binary_path.txt)
-          analyzeHeadless /tmp/ghproj proj -import "$BIN" -postScript FindXrefs.java -scriptPath ./scripts -log ghidra.log
+          AH=$(find / -name analyzeHeadless -type f 2>/dev/null | head -1)
+          echo "AH=$AH"
+          "$AH" /tmp/ghproj proj -import "$BIN" -postScript FindXrefs.java -scriptPath ./scripts -log ghidra.log
       - name: Upload output
         uses: actions/upload-artifact@v4
         with:
