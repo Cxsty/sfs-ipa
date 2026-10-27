@@ -17,7 +17,7 @@ jobs:
           BIN=$(cat binary_path.txt)
           AH=$(find / -name analyzeHeadless -type f 2>/dev/null | head -1)
           echo "AH=$AH"
-          "$AH" /tmp/ghproj proj -import "$BIN" -postScript FindXrefs.java -scriptPath /Users/runner/work/sfs-ipa/scripts -log ghidra.log
+          "$AH" /tmp/ghproj proj -import "$BIN" -postScript FindXrefs.java -scriptPath /Users/runner/work/sfs-ipa/sfs-ipa/scripts -log ghidra.log
       - name: Upload output
         uses: actions/upload-artifact@v4
         with:
