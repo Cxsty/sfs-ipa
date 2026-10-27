@@ -1,0 +1,23 @@
+name: Decompile IPA
+on: workflow_dispatch
+jobs:
+  decompile:
+    runs-on: macos-latest
+    steps:
+      - name: Download IPA
+        run: curl -L -o app.ipa "https://github.com/Cxsty/sfs-ipa/releases/download/v1/sfs.ipa"
+      - name: Install Ghidra
+        run: brew install ghidra
+      - name: Extract IPA
+        run: unzip -q app.ipa -d ipa_extracted
+      - name: Find binary
+        run: find ipa_extracted -name "UnityFramework" -type f | head -1 > binary_path.txt
+      - name: Run Ghidra headless
+        run: |
+          BIN=$(cat binary_path.txt)
+          /usr/local/bin/analyzeHeadless /tmp/ghproj proj -import "$BIN" -postScript FindXrefs.java -scriptPath ./scripts -log ghidra.log
+      - name: Upload output
+        uses: actions/upload-artifact@v4
+        with:
+          name: decompiled
+          path: /tmp/ghproj
