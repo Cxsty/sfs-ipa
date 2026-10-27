@@ -4,6 +4,7 @@ jobs:
   decompile:
     runs-on: macos-latest
     steps:
+      - uses: actions/checkout@v4
       - name: Download IPA
         run: curl -L -o app.ipa "https://github.com/Cxsty/sfs-ipa/releases/download/v1/sfs.ipa"
       - name: Install Ghidra
@@ -12,41 +13,11 @@ jobs:
         run: unzip -q app.ipa -d ipa_extracted
       - name: Find binary
         run: find ipa_extracted -name "UnityFramework" -type f | head -1 > binary_path.txt
-      - name: Prepare scripts
-        run: |
-          mkdir -p /tmp/scripts
-          cat > /tmp/scripts/FindXrefs.java << 'SCRIPT'
-import ghidra.app.script.GhidraScript;
-import ghidra.program.model.address.Address;
-import ghidra.program.model.symbol.Reference;
-import ghidra.program.model.symbol.ReferenceManager;
-import ghidra.program.model.listing.Function;
-import ghidra.program.model.listing.FunctionManager;
-public class FindXrefs extends GhidraScript {
-    public void run() throws Exception {
-        Address addr = toAddr(0xa5244);
-        println("Finding references to " + addr);
-        FunctionManager fm = currentProgram.getFunctionManager();
-        Function func = fm.getFunctionContaining(addr);
-        if (func != null) println("Function containing: " + func.getName() + " at " + func.getEntryPoint());
-        ReferenceManager refMgr = currentProgram.getReferenceManager();
-        Reference[] refs = refMgr.getReferencesTo(addr);
-        println("Number of references: " + refs.length);
-        for (Reference ref : refs) {
-            Address fromAddr = ref.getFromAddress();
-            println("  from " + fromAddr + " type=" + ref.getReferenceType());
-            Function f = fm.getFunctionContaining(fromAddr);
-            if (f != null) println("    in function: " + f.getName() + " at " + f.getEntryPoint());
-        }
-    }
-}
-SCRIPT
       - name: Run Ghidra headless
         run: |
           BIN=$(cat binary_path.txt)
           AH=$(find / -name analyzeHeadless -type f 2>/dev/null | head -1)
-          echo "AH=$AH"
-          "$AH" /tmp/ghproj proj -import "$BIN" -postScript FindXrefs.java -scriptPath /tmp/scripts -log ghidra.log
+          "$AH" /tmp/ghproj proj -import "$BIN" -postScript FindXrefs.java -scriptPath ./scripts -log ghidra.log
       - name: Upload output
         uses: actions/upload-artifact@v4
         with:
