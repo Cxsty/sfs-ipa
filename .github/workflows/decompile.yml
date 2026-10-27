@@ -13,7 +13,34 @@ jobs:
       - name: Find binary
         run: find ipa_extracted -name "UnityFramework" -type f | head -1 > binary_path.txt
       - name: Prepare scripts
-        run: mkdir -p /tmp/scripts && find /Users/runner/work -name '*.java' -exec cp {} /tmp/scripts/ \;
+        run: |
+          mkdir -p /tmp/scripts
+          cat > /tmp/scripts/FindXrefs.java << 'SCRIPT'
+import ghidra.app.script.GhidraScript;
+import ghidra.program.model.address.Address;
+import ghidra.program.model.symbol.Reference;
+import ghidra.program.model.symbol.ReferenceManager;
+import ghidra.program.model.listing.Function;
+import ghidra.program.model.listing.FunctionManager;
+public class FindXrefs extends GhidraScript {
+    public void run() throws Exception {
+        Address addr = toAddr(0xa5244);
+        println("Finding references to " + addr);
+        FunctionManager fm = currentProgram.getFunctionManager();
+        Function func = fm.getFunctionContaining(addr);
+        if (func != null) println("Function containing: " + func.getName() + " at " + func.getEntryPoint());
+        ReferenceManager refMgr = currentProgram.getReferenceManager();
+        Reference[] refs = refMgr.getReferencesTo(addr);
+        println("Number of references: " + refs.length);
+        for (Reference ref : refs) {
+            Address fromAddr = ref.getFromAddress();
+            println("  from " + fromAddr + " type=" + ref.getReferenceType());
+            Function f = fm.getFunctionContaining(fromAddr);
+            if (f != null) println("    in function: " + f.getName() + " at " + f.getEntryPoint());
+        }
+    }
+}
+SCRIPT
       - name: Run Ghidra headless
         run: |
           BIN=$(cat binary_path.txt)
